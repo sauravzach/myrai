@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Deliberately inert: no scripts, no external requests of any kind. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex, nofollow">
+<title>You're Not On The List</title>
+<style>
+  :root {
+    --bg: #f6f1e7;
+    --ink: #1d1a16;
+    --muted: #6b645a;
+    --accent: #b3261e;
+    --rope: #8c1c2b;
+    --brass: #c9a227;
+    --suit: #22201d;
+    --skin: #d9a57b;
+    --card: #fffdf8;
+    --line: #e4dccd;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #15130f;
+      --ink: #f1ebe0;
+      --muted: #a39a8c;
+      --accent: #ff6b5e;
+      --rope: #c23a4c;
+      --brass: #e0bb45;
+      --suit: #3a3631;
+      --skin: #c99570;
+      --card: #1f1c17;
+      --line: #342f28;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.55 ui-rounded, "SF Pro Rounded", system-ui, -apple-system, "Segoe UI", sans-serif;
+    min-height: 100svh;
+    display: grid;
+    place-items: center;
+    padding: 32px 16px;
+  }
+  main { width: 100%; max-width: 560px; text-align: center; }
+
+  .scene { width: 100%; max-width: 360px; height: auto; display: block; margin: 0 auto 8px; }
+  .head { transform-origin: 160px 118px; animation: nope 2.4s ease-in-out infinite; }
+  .rope { transform-origin: 160px 222px; animation: sway 3s ease-in-out infinite; }
+  .bubble { transform-origin: 250px 70px; animation: pop 2.4s ease-in-out infinite; }
+  @keyframes nope {
+    0%, 30%, 100% { transform: rotate(0); }
+    40% { transform: rotate(-9deg); }
+    52% { transform: rotate(9deg); }
+    64% { transform: rotate(-9deg); }
+    76% { transform: rotate(0); }
+  }
+  @keyframes sway { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(1.25); } }
+  @keyframes pop {
+    0%, 32% { transform: scale(0); opacity: 0; }
+    40%, 80% { transform: scale(1); opacity: 1; }
+    90%, 100% { transform: scale(0); opacity: 0; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .head, .rope { animation: none; }
+    .bubble { animation: none; transform: none; opacity: 1; }
+  }
+
+  h1 { font-size: clamp(30px, 8vw, 44px); line-height: 1.1; margin: 8px 0 12px; letter-spacing: -0.02em; }
+  .lede { color: var(--muted); margin: 0 auto 28px; max-width: 30em; }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 20px 22px;
+    text-align: left;
+  }
+  .card h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin: 0 0 10px; }
+  .card ul { list-style: none; margin: 0; padding: 0; }
+  .card li { padding: 7px 0; border-top: 1px dashed var(--line); display: flex; gap: 12px; justify-content: space-between; }
+  .card li:first-child { border-top: 0; }
+  .card li span:last-child { color: var(--accent); font-weight: 600; white-space: nowrap; }
+  .fine { color: var(--muted); font-size: 14px; margin-top: 24px; }
+</style>
+</head>
+<body>
+<main>
+  <svg class="scene" viewBox="0 0 320 260" role="img" aria-label="A bouncer in sunglasses shaking his head behind a velvet rope">
+    <!-- bouncer body -->
+    <path d="M92 250 Q92 150 160 146 Q228 150 228 250 Z" fill="var(--suit)"/>
+    <path d="M148 150 L160 186 L172 150 Z" fill="var(--card)"/>
+    <path d="M156 158 L160 190 L164 158 Z" fill="var(--accent)"/>
+    <!-- crossed arms -->
+    <rect x="104" y="196" width="112" height="26" rx="13" fill="var(--suit)" stroke="var(--bg)" stroke-width="3"/>
+    <circle cx="112" cy="209" r="10" fill="var(--skin)"/>
+    <circle cx="208" cy="209" r="10" fill="var(--skin)"/>
+    <!-- head -->
+    <g class="head">
+      <rect x="150" y="122" width="20" height="18" fill="var(--skin)"/>
+      <ellipse cx="160" cy="92" rx="38" ry="42" fill="var(--skin)"/>
+      <rect x="120" y="80" width="80" height="18" rx="6" fill="var(--ink)"/>
+      <rect x="126" y="83" width="30" height="12" rx="4" fill="var(--suit)"/>
+      <rect x="164" y="83" width="30" height="12" rx="4" fill="var(--suit)"/>
+      <path d="M146 116 Q160 110 174 116" stroke="var(--ink)" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <path d="M124 70 Q160 40 196 70" stroke="var(--ink)" stroke-width="5" fill="none" stroke-linecap="round"/>
+    </g>
+    <!-- speech bubble -->
+    <g class="bubble">
+      <path d="M216 34 h72 a12 12 0 0 1 12 12 v22 a12 12 0 0 1 -12 12 h-48 l-14 12 v-12 h-10 a12 12 0 0 1 -12 -12 v-22 a12 12 0 0 1 12 -12 z" fill="var(--card)" stroke="var(--line)" stroke-width="2"/>
+      <text x="252" y="64" text-anchor="middle" font-size="18" font-weight="800" fill="var(--accent)" font-family="system-ui, sans-serif">NOPE.</text>
+    </g>
+    <!-- velvet rope -->
+    <rect x="20" y="206" width="10" height="50" rx="3" fill="var(--brass)"/>
+    <circle cx="25" cy="204" r="8" fill="var(--brass)"/>
+    <rect x="290" y="206" width="10" height="50" rx="3" fill="var(--brass)"/>
+    <circle cx="295" cy="204" r="8" fill="var(--brass)"/>
+    <path class="rope" d="M30 212 Q160 252 290 212" stroke="var(--rope)" stroke-width="8" fill="none" stroke-linecap="round"/>
+  </svg>
+
+  <h1>You're not on the list.</h1>
+  <p class="lede">
+    This site only opens its doors to a very small, very exclusive set of devices.
+    Yours seems lovely. It is not one of them.
+  </p>
+
+  <section class="card" aria-labelledby="tried">
+    <h2 id="tried">Things that will not work</h2>
+    <ul>
+      <li><span>Refreshing, but harder</span><span>No</span></li>
+      <li><span>Saying you know the owner</span><span>Everyone says that</span></li>
+      <li><span>Incognito mode</span><span>He can still see you</span></li>
+      <li><span>Asking really nicely</span><span>Touching, but no</span></li>
+      <li><span>Bribing the bouncer with snacks</span><span>Snacks kept, still no</span></li>
+    </ul>
+  </section>
+
+  <p class="fine">If you're supposed to be here, you already know what to switch on.</p>
+</main>
+</body>
+</html>
