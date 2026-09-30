@@ -105,7 +105,7 @@
   <p class="lede">But there's a way in. Maybe. Solve the riddle.</p>
 
   <section class="card" id="ask">
-    <p class="eyebrow">THE HARDEST RIDDLE YOU WILL EVER ANSWER CORRECTLY FOR NOTHING</p>
+    <p class="eyebrow">PROVE YOU BELONG HERE</p>
     <p class="riddle" id="riddle-text"></p>
     <input id="answer" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Your answer…" aria-label="Your answer to the riddle">
     <button id="submit">Submit and find out</button>
@@ -125,16 +125,20 @@
 (function () {
   'use strict';
 
-  // A real mix: several of these are genuine, solvable, hard riddles — the
-  // rest are deliberately impossible. It doesn't matter which one lands,
-  // because nothing here is ever actually checked. That's the whole joke.
-  var RIDDLES = [
+  // Genuine, solvable riddles — real stakes, nothing that hints this is a
+  // bit. These are the only ones a first-time visitor can be shown: the
+  // whole prank depends on the setup being played completely straight.
+  var REAL_RIDDLES = [
     'The person who makes it does not want it. The person who buys it does not use it. The person who uses it does not know it. What is it?',
     'I speak without a mouth and hear without ears. I have no body, but I come alive with the wind. What am I?',
     'Forward I am heavy. Backward I am not. What am I?',
     'The more you take, the more you leave behind. What am I?',
     'A man describes his daughter: "She has as many brothers as sisters, but each brother has only half as many brothers as sisters." How many sons and daughters does he have?',
-    'Two fathers and two sons go fishing. Each catches exactly one fish, yet only three fish are caught in total. How?',
+    'Two fathers and two sons go fishing. Each catches exactly one fish, yet only three fish are caught in total. How?'
+  ];
+  // Deliberately impossible — only shown once someone has already been
+  // rejected a couple of times and the bit can afford to show a little.
+  var ABSURD_RIDDLES = [
     'What is the precise square root of the feeling you get when a bouncer says "maybe"?',
     'Spell "impossible" using only the letters found in the word "no".',
     'If a riddle rejects you in a forest and no one is around to hear it, were you ever really on the list?',
@@ -145,7 +149,7 @@
   // tried. A few exact milestones get their own line as a small reward for
   // real commitment to the bit.
   var BUCKETS = [
-    ['Correct. Astonishingly correct. Still no.', 'That is exactly right, actually. Doesn’t matter.', 'Not bad. Not nearly good enough.'],
+    ['That answer was correct. It didn’t matter.', 'Right answer. Wrong universe, apparently.', 'You solved it. You are still not on the list.'],
     ['We stopped checking after the first riddle, if we’re honest.', 'The list was never real. Neither is your chance.', 'Bold of you to assume there was ever a list.', 'The bouncer is very impressed. The bouncer still says no.'],
     ['Most people give up by now. You are not most people. Still no.', 'We respect the commitment. The answer remains no.', 'You could be solving actual world problems right now. Instead: this.'],
     ['There is a betting pool on when you’ll stop. You’re currently costing someone money.', 'Legend says one person got in once. It wasn’t them either.', 'At this point you basically work here. Unpaid. Still not on the list.']
@@ -179,10 +183,14 @@
 
   var lastRiddle = -1;
   function nextRiddle() {
+    // The first couple of riddles anyone ever sees are always real — the
+    // absurd ones only enter the pool once a rejection or two has already
+    // landed, so the setup never gives itself away.
+    var pool = count < 2 ? REAL_RIDDLES : REAL_RIDDLES.concat(ABSURD_RIDDLES);
     var i;
-    do { i = Math.floor(Math.random() * RIDDLES.length); } while (i === lastRiddle && RIDDLES.length > 1);
+    do { i = Math.floor(Math.random() * pool.length); } while (i === lastRiddle && pool.length > 1);
     lastRiddle = i;
-    els.riddleText.textContent = RIDDLES[i];
+    els.riddleText.textContent = pool[i];
   }
 
   function pickRejection(n) {
