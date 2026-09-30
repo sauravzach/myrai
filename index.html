@@ -35,187 +35,204 @@
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; }
+  /* Kills the double-tap-to-zoom gesture (the actual bug report) without
+     touching pinch-zoom or the viewport's scale limits — unlike
+     user-scalable=no, this doesn't take zoom away from anyone who needs it. */
+  html { touch-action: manipulation; }
   body {
     background: var(--bg);
     color: var(--ink);
-    font: 17px/1.5 ui-rounded, "SF Pro Rounded", system-ui, -apple-system, "Segoe UI", sans-serif;
+    font: 17px/1.55 ui-rounded, "SF Pro Rounded", system-ui, -apple-system, "Segoe UI", sans-serif;
     min-height: 100svh;
     display: grid;
     place-items: center;
-    padding: 24px 16px;
+    padding: 32px 16px;
   }
-  main { width: 100%; max-width: 360px; text-align: center; }
-  h1 { font-size: clamp(24px, 7vw, 32px); line-height: 1.15; margin: 0 0 6px; letter-spacing: -0.02em; }
-  .lede { color: var(--muted); margin: 0 0 16px; }
-  canvas {
-    width: 100%;
-    aspect-ratio: 2 / 3;
+  main { width: 100%; max-width: 420px; text-align: center; }
+  h1 { font-size: clamp(28px, 8vw, 38px); line-height: 1.1; margin: 0 0 8px; letter-spacing: -0.02em; }
+  .lede { color: var(--muted); margin: 0 auto 22px; max-width: 30em; }
+
+  .card {
     background: var(--card);
     border: 1px solid var(--line);
     border-radius: 16px;
-    touch-action: manipulation;
-    cursor: pointer;
+    padding: 22px;
+    text-align: left;
   }
-  .fine { color: var(--muted); font-size: 13px; margin-top: 14px; }
+  .eyebrow { font-size: 12px; letter-spacing: 0.04em; color: var(--brass); font-weight: 700; margin: 0 0 8px; }
+  .riddle { font-size: 19px; line-height: 1.4; margin: 0 0 18px; }
+
+  input {
+    width: 100%;
+    font: inherit;
+    font-size: 16px; /* stops iOS zooming the page on focus */
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    background: var(--bg);
+    color: var(--ink);
+    margin: 0 0 12px;
+  }
+  input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+  button {
+    font: inherit;
+    font-weight: 700;
+    font-size: 16px;
+    width: 100%;
+    padding: 13px 14px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    background: var(--accent);
+    color: var(--card);
+  }
+  button:active { transform: scale(0.98); }
+  button.ghost { background: transparent; border: 1px solid var(--line); color: var(--ink); margin-top: 10px; }
+
+  .verdict-tag { font-size: 12px; letter-spacing: 0.04em; color: var(--accent); font-weight: 700; margin: 0 0 8px; }
+  .verdict { font-size: 20px; font-weight: 800; margin: 0 0 10px; }
+  .verdict-sub { color: var(--muted); margin: 0; }
+  .echo { color: var(--muted); font-size: 13px; margin: 10px 0 0; font-style: italic; }
+
+  .tally { color: var(--muted); font-size: 13px; margin-top: 18px; }
+  [hidden] { display: none !important; }
 </style>
 </head>
 <body>
 <main>
   <h1>You're not on the list.</h1>
-  <p class="lede">So sneak past the bouncers instead.</p>
-  <canvas id="g" width="320" height="480" aria-label="Tap-to-fly game: guide the dot between the velvet ropes without touching them"></canvas>
-  <p class="fine">Tap, click, or press space to fly. One touch is all it takes to get bounced.</p>
+  <p class="lede">But there's a way in. Maybe. Solve the riddle.</p>
+
+  <section class="card" id="ask">
+    <p class="eyebrow">THE HARDEST RIDDLE YOU WILL EVER ANSWER CORRECTLY FOR NOTHING</p>
+    <p class="riddle" id="riddle-text"></p>
+    <input id="answer" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Your answer…" aria-label="Your answer to the riddle">
+    <button id="submit">Submit and find out</button>
+  </section>
+
+  <section class="card" id="result" hidden>
+    <p class="verdict-tag" id="verdict-tag">VERDICT</p>
+    <p class="verdict" id="verdict-text"></p>
+    <p class="verdict-sub" id="verdict-sub"></p>
+    <p class="echo" id="echo" hidden></p>
+    <button class="ghost" id="retry">Try a different riddle</button>
+  </section>
+
+  <p class="tally" id="tally" hidden></p>
 </main>
 <script>
 (function () {
   'use strict';
-  var canvas = document.getElementById('g');
-  var ctx = canvas.getContext('2d');
-  var W = canvas.width, H = canvas.height;
-  var TAU = Math.PI * 2;
 
-  // Read the theme's colours once, and again if the OS theme flips mid-game.
-  var C = {};
-  function readColours() {
-    var s = getComputedStyle(document.documentElement);
-    ['bg', 'ink', 'muted', 'accent', 'brass', 'suit', 'card', 'line'].forEach(function (k) {
-      C[k] = s.getPropertyValue('--' + k).trim();
-    });
+  // A real mix: several of these are genuine, solvable, hard riddles — the
+  // rest are deliberately impossible. It doesn't matter which one lands,
+  // because nothing here is ever actually checked. That's the whole joke.
+  var RIDDLES = [
+    'The person who makes it does not want it. The person who buys it does not use it. The person who uses it does not know it. What is it?',
+    'I speak without a mouth and hear without ears. I have no body, but I come alive with the wind. What am I?',
+    'Forward I am heavy. Backward I am not. What am I?',
+    'The more you take, the more you leave behind. What am I?',
+    'A man describes his daughter: "She has as many brothers as sisters, but each brother has only half as many brothers as sisters." How many sons and daughters does he have?',
+    'Two fathers and two sons go fishing. Each catches exactly one fish, yet only three fish are caught in total. How?',
+    'What is the precise square root of the feeling you get when a bouncer says "maybe"?',
+    'Spell "impossible" using only the letters found in the word "no".',
+    'If a riddle rejects you in a forest and no one is around to hear it, were you ever really on the list?',
+    'In exactly one word, using only vowels, explain why you deserve to get in.'
+  ];
+
+  // Escalating rejections, bucketed by how many times this browser has
+  // tried. A few exact milestones get their own line as a small reward for
+  // real commitment to the bit.
+  var BUCKETS = [
+    ['Correct. Astonishingly correct. Still no.', 'That is exactly right, actually. Doesn’t matter.', 'Not bad. Not nearly good enough.'],
+    ['We stopped checking after the first riddle, if we’re honest.', 'The list was never real. Neither is your chance.', 'Bold of you to assume there was ever a list.', 'The bouncer is very impressed. The bouncer still says no.'],
+    ['Most people give up by now. You are not most people. Still no.', 'We respect the commitment. The answer remains no.', 'You could be solving actual world problems right now. Instead: this.'],
+    ['There is a betting pool on when you’ll stop. You’re currently costing someone money.', 'Legend says one person got in once. It wasn’t them either.', 'At this point you basically work here. Unpaid. Still not on the list.']
+  ];
+  var MILESTONES = {
+    10: 'Ten riddles. Ten rejections. This is basically a tradition now. Still no.',
+    25: 'Twenty-five. We printed you a certificate. It says NO in a nice font.',
+    50: 'Fifty attempts. Somewhere, a bouncer is quietly proud of you. The answer is still no.',
+    100: 'One hundred. Okay. Genuinely well played. You are still not on the list.'
+  };
+  var ECHO_CHANCE = 0.4; // only sometimes mock the actual answer, so it stays a surprise
+
+  var KEY = 'notonthelist-attempts';
+  function loadCount() { try { return Number(localStorage.getItem(KEY)) || 0; } catch (e) { return 0; } }
+  function saveCount(v) { try { localStorage.setItem(KEY, String(v)); } catch (e) {} }
+  var count = loadCount();
+
+  var els = {
+    ask: document.getElementById('ask'),
+    riddleText: document.getElementById('riddle-text'),
+    answer: document.getElementById('answer'),
+    submit: document.getElementById('submit'),
+    result: document.getElementById('result'),
+    tag: document.getElementById('verdict-tag'),
+    verdict: document.getElementById('verdict-text'),
+    sub: document.getElementById('verdict-sub'),
+    echo: document.getElementById('echo'),
+    retry: document.getElementById('retry'),
+    tally: document.getElementById('tally')
+  };
+
+  var lastRiddle = -1;
+  function nextRiddle() {
+    var i;
+    do { i = Math.floor(Math.random() * RIDDLES.length); } while (i === lastRiddle && RIDDLES.length > 1);
+    lastRiddle = i;
+    els.riddleText.textContent = RIDDLES[i];
   }
-  readColours();
-  if (window.matchMedia) {
-    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', readColours);
+
+  function pickRejection(n) {
+    if (MILESTONES[n]) return MILESTONES[n];
+    var bucket = BUCKETS[Math.min(BUCKETS.length - 1, Math.floor((n - 1) / 3))];
+    return bucket[Math.floor(Math.random() * bucket.length)];
   }
 
-  var BEST_KEY = 'notonthelist-best';
-  function loadBest() { try { return Number(localStorage.getItem(BEST_KEY)) || 0; } catch (e) { return 0; } }
-  function saveBest(v) { try { localStorage.setItem(BEST_KEY, String(v)); } catch (e) {} }
-  var best = loadBest();
-
-  var GRAVITY = 0.42, FLAP = -7.2, GAP = 132, POST_W = 46, SPACING = 210;
-  var player, posts, score, speed, state, shake;
-
-  function reset() {
-    player = { x: 78, y: H / 2, vy: 0, r: 11 };
-    posts = [{ x: W + 40, gapY: H / 2 }];
-    score = 0;
-    speed = 2.6;
-    shake = 0;
-    state = 'ready'; // ready -> playing -> dead
+  function showAsk() {
+    els.result.hidden = true;
+    els.ask.hidden = false;
+    els.answer.value = '';
+    nextRiddle();
+    els.answer.focus();
   }
-  reset();
 
-  function flap() {
-    if (state === 'ready') state = 'playing';
-    if (state === 'dead') { reset(); return; }
-    player.vy = FLAP;
-  }
-  canvas.addEventListener('pointerdown', flap);
-  window.addEventListener('keydown', function (e) {
-    if (e.code === 'Space') { e.preventDefault(); flap(); }
-  });
+  function submit() {
+    count++;
+    saveCount(count);
+    var typed = els.answer.value.trim();
 
-  function step() {
-    if (state === 'playing') {
-      player.vy += GRAVITY;
-      player.y += player.vy;
+    els.ask.hidden = true;
+    els.result.hidden = false;
+    els.tag.textContent = 'CONSULTING THE LIST…';
+    els.verdict.textContent = '';
+    els.sub.textContent = '';
+    els.echo.hidden = true;
 
-      for (var i = 0; i < posts.length; i++) posts[i].x -= speed;
-      if (posts[posts.length - 1].x < W - SPACING) {
-        posts.push({ x: W + POST_W, gapY: 70 + Math.random() * (H - 140) });
+    // A short, deliberate pause — the theater is the whole point.
+    window.setTimeout(function () {
+      els.tag.textContent = 'VERDICT #' + count;
+      els.verdict.textContent = 'Not on the list.';
+      els.sub.textContent = pickRejection(count);
+      if (typed && Math.random() < ECHO_CHANCE) {
+        var shown = typed.length > 80 ? typed.slice(0, 80) + '…' : typed;
+        els.echo.textContent = 'Your answer, for the record: “' + shown + '”';
+        els.echo.hidden = false;
       }
-      // A post fully offscreen has been passed: score it and drop it.
-      if (posts[0].x < -POST_W) { posts.shift(); score++; speed = 2.6 + Math.min(score * 0.06, 2.4); }
-
-      for (var j = 0; j < posts.length; j++) {
-        var p = posts[j];
-        var hitsX = player.x + player.r > p.x && player.x - player.r < p.x + POST_W;
-        var hitsGap = player.y - player.r > p.gapY - GAP / 2 && player.y + player.r < p.gapY + GAP / 2;
-        if (hitsX && !hitsGap) die();
-      }
-      if (player.y - player.r < 0 || player.y + player.r > H) die();
-    } else if (shake > 0) {
-      shake -= 1;
-    }
-
-    draw();
-    requestAnimationFrame(step);
+      els.tally.hidden = false;
+      els.tally.textContent = count === 1 ? 'That was riddle #1.' : 'That was riddle #' + count + '.';
+    }, 650);
   }
 
-  function die() {
-    state = 'dead';
-    shake = 10;
-    if (score > best) { best = score; saveBest(best); }
-  }
+  els.submit.addEventListener('click', submit);
+  els.answer.addEventListener('keydown', function (e) { if (e.key === 'Enter') submit(); });
+  els.retry.addEventListener('click', showAsk);
 
-  function fillRound(x, y, w, h, r) {
-    if (h <= 0) return;
-    ctx.beginPath();
-    ctx.roundRect(x, y, w, h, Math.min(r, w / 2, h / 2));
-    ctx.fill();
-  }
-
-  function draw() {
-    // A brief camera-shake on death sells the "bounced" impact.
-    var dx = shake > 0 ? (Math.random() - 0.5) * shake : 0;
-    ctx.save();
-    ctx.translate(dx, 0);
-
-    ctx.fillStyle = C.card;
-    ctx.fillRect(-20, 0, W + 40, H);
-
-    // Each obstacle is a brass-capped rope post pair, one hanging from the
-    // top, one rising from the bottom, with a gap to fly through between.
-    for (var i = 0; i < posts.length; i++) {
-      var p = posts[i];
-      var topH = p.gapY - GAP / 2, botY = p.gapY + GAP / 2;
-      ctx.fillStyle = C.suit;
-      fillRound(p.x, 0, POST_W, topH, 8);
-      fillRound(p.x, botY, POST_W, H - botY, 8);
-      ctx.fillStyle = C.brass;
-      ctx.beginPath(); ctx.arc(p.x + POST_W / 2, topH, 9, 0, TAU); ctx.fill();
-      ctx.beginPath(); ctx.arc(p.x + POST_W / 2, botY, 9, 0, TAU); ctx.fill();
-    }
-
-    ctx.fillStyle = C.accent;
-    ctx.beginPath(); ctx.arc(player.x, player.y, player.r, 0, TAU); ctx.fill();
-
-    // A light halo keeps the score legible even when a dark post scrolls
-    // directly behind it — both the digit and the posts are near-black.
-    ctx.font = '700 28px ui-rounded, system-ui, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.lineJoin = 'round';
-    ctx.strokeStyle = C.card;
-    ctx.lineWidth = 6;
-    ctx.strokeText(String(score), W / 2, 46);
-    ctx.fillStyle = C.ink;
-    ctx.fillText(String(score), W / 2, 46);
-
-    if (state !== 'playing') {
-      bubble(state === 'ready' ? 'TAP TO SNEAK IN' : 'NOPE.', state === 'ready' ? 'Fly between the ropes.' : ('Best: ' + best));
-    }
-
-    ctx.restore();
-  }
-
-  function bubble(title, sub) {
-    var bw = 240, bh = 92, bx = W / 2 - bw / 2, by = H / 2 - bh / 2;
-    ctx.fillStyle = C.card;
-    ctx.strokeStyle = C.line;
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.roundRect(bx, by, bw, bh, 16);
-    ctx.fill();
-    ctx.stroke();
-    ctx.fillStyle = C.accent;
-    ctx.font = '800 22px system-ui, sans-serif';
-    ctx.fillText(title, W / 2, by + 38);
-    ctx.fillStyle = C.muted;
-    ctx.font = '400 14px system-ui, sans-serif';
-    ctx.fillText(sub, W / 2, by + 64);
-  }
-
-  requestAnimationFrame(step);
+  els.tally.hidden = count === 0;
+  if (count > 0) els.tally.textContent = 'You’ve tried ' + count + ' time' + (count === 1 ? '' : 's') + '. Welcome back.';
+  nextRiddle();
 })();
 </script>
 </body>
