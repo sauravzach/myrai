@@ -9,6 +9,17 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; connect-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="no-referrer">
 <meta name="robots" content="noindex, nofollow">
+<meta name="description" content="There's a way in. Maybe. Solve the riddle.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://myrai.vip/">
+<meta property="og:title" content="You're not on the list.">
+<meta property="og:description" content="There's a way in. Maybe. Solve the riddle.">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="You're not on the list.">
+<meta name="twitter:description" content="There's a way in. Maybe. Solve the riddle.">
+<meta name="theme-color" content="#f6f1e7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15130f" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%9A%AB%3C/text%3E%3C/svg%3E">
 <title>You're Not On The List</title>
 <style>
   :root {
@@ -74,6 +85,9 @@
     margin: 0 0 12px;
   }
   input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  input.nudge { animation: nudge 0.3s; }
+  @keyframes nudge { 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+  @media (prefers-reduced-motion: reduce) { input.nudge { animation: none; } }
 
   button {
     font: inherit;
@@ -111,7 +125,7 @@
     <button id="submit">Submit and find out</button>
   </section>
 
-  <section class="card" id="result" hidden>
+  <section class="card" id="result" aria-live="polite" hidden>
     <p class="verdict-tag" id="verdict-tag">VERDICT</p>
     <p class="verdict" id="verdict-text"></p>
     <p class="verdict-sub" id="verdict-sub"></p>
@@ -208,9 +222,17 @@
   }
 
   function submit() {
+    var typed = els.answer.value.trim();
+    // An empty answer isn't an attempt — nudge instead of burning a verdict.
+    if (!typed) {
+      els.answer.classList.remove('nudge');
+      void els.answer.offsetWidth; // restart the animation on repeat presses
+      els.answer.classList.add('nudge');
+      els.answer.focus();
+      return;
+    }
     count++;
     saveCount(count);
-    var typed = els.answer.value.trim();
 
     els.ask.hidden = true;
     els.result.hidden = false;
